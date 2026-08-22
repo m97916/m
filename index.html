@@ -7,5 +7,107 @@
 </head>
 <body>
     <h1>Привет, я Mini App</h1>
+
+
+
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Галерея TikTok</title>
+    <!-- Подключаем простую сетку для красивого отображения -->
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f9f9f9;
+            padding: 20px;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            /* Делаем блок адаптивным с пропорциями вертикального видео */
+            padding-bottom: 177%; 
+            height: 0;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background-color: #000;
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        @media (max-width: 600px) {
+            .gallery { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<h1>Моя подборка видео из TikTok</h1>
+<div class="gallery" id="tiktok-gallery"></div>
+
+<script>
+// Список ID ваших видео
+const videoIds = [
+    '7062627901291629826', // Замените на ваш первый ID
+    '7123456789098765432', // Замените на ваш второй ID
+    '7123456789011223344'  // И так далее
+];
+
+const galleryElement = document.getElementById('tiktok-gallery');
+
+async function embedTikTokVideo(id) {
+    const url = `https://www.tiktok.com/@tiktok/video/${id}`;
+    
+    try {
+        // Запрашиваем данные oEmbed у сервера TikTok
+        const response = await fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`);
+        
+        if (!response.ok) {
+            throw new Error(`Ошибка сети: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Создаем контейнер для видео
+        const container = document.createElement('div');
+        container.className = 'video-container';
+        
+        // Вставляем полученный от TikTok HTML-код плеера
+        container.innerHTML = data.html;
+        
+        // Добавляем готовое видео в галерею на странице
+        galleryElement.appendChild(container);
+
+    } catch (error) {
+        console.error(`Не удалось загрузить видео ${id}:`, error);
+        // Показываем заглушку, если видео недоступно (например, приватное)
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = 'padding: 40px; text-align: center; color: #666; background:#fff; border-radius:12px;';
+        errorDiv.textContent = `Видео (${id}) недоступно`;
+        galleryElement.appendChild(errorDiv);
+    }
+}
+
+// Загружаем все видео по очереди
+videoIds.forEach(embedTikTokVideo);
+</script>
+
+</body>
+</html>
+
+
+
+    
 </body>
 </html>
