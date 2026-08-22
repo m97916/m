@@ -1,1 +1,263 @@
 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Галерея TikTok (Официальный плеер)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- 1. ПОДКЛЮЧАЕМ ОФИЦИАЛЬНЫЙ СКРИПТ TIKTOK ТОЛЬКО ОДИН РАЗ -->
+    <script async src="https://www.tiktok.com/embed.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f4f4f4;
+            --card-bg: #fff;
+            --text-color: #333;
+            --accent-red: #e74c3c;
+            --transition-speed: 0.3s;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 30px 20px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 2rem;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 0.95rem;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .video-card {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 9 / 16; 
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            background-color: #000;
+            cursor: pointer;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .placeholder-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+            transition: opacity var(--transition-speed) ease;
+        }
+
+        .play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+            transition: all var(--transition-speed) cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .play-button svg {
+            width: 22px;
+            height: 22px;
+            fill: #000;
+            margin-left: 3px;
+            transition: transform var(--transition-speed) ease;
+        }
+
+        .video-card:hover .play-button {
+            scale: 1.1;
+            background: white;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+        }
+
+        .loader {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            color: white;
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 0 20px;
+            opacity: 1;
+            transition: opacity 0.2s ease;
+        }
+
+        .loader.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Стили самого блока embed от TikTok */
+        blockquote.tiktok-embed {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            border: none !important;
+            margin: 0 !important;
+            z-index: 10;
+            border-radius: 16px;
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 20px 10px; }
+            h1 { font-size: 1.5rem; }
+            .video-card { border-radius: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Подборка видео из TikTok 555</h1>
+    <p class="subtitle">Нажмите на карточку для загрузки официального плеера</p>
+
+    <div class="gallery" id="tiktok-gallery"></div>
+
+    <script>
+        // Список ID ваших видео
+        const videoIds = [
+            '7062627901291629826', 
+            '7123456789098765432'
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const galleryElement = document.getElementById('tiktok-gallery');
+            if (!galleryElement) return;
+
+            /**
+             * Функция создания карточки одного видео
+             */
+            function createVideoCard(videoId) {
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                card.dataset.id = videoId;
+
+                const loader = document.createElement('div');
+                loader.className = 'loader';
+                loader.textContent = 'Загрузка...';
+                card.appendChild(loader);
+                
+                const container = document.createElement('div');
+                container.className = 'tiktok-player-holder';
+
+                // Загружаем обложку напрямую со CDN TikTok (это быстрее, чем oEmbed)
+                const imgUrl = `https://p16-sign-va.tiktokcdn.com/obj/tos-maliva-p-0037/cover/${videoId.slice(-10)}_cover.jpg`;
+                const placeholderImg = document.createElement('img');
+                placeholderImg.src = imgUrl;
+                placeholderImg.alt = 'Обложка видео';
+                placeholderImg.className = 'placeholder-img';
+                placeholderImg.onerror = function() { this.style.display = 'none'; }; // Скрываем битую картинку
+                card.prepend(placeholderImg);
+
+                let isLoading = false;
+                let hasPlayed = false;
+
+                card.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    
+                    if (hasPlayed || isLoading) return;
+
+                    isLoading = true;
+                    hasPlayed = true;
+                    loader.style.opacity = '1';
+
+                    try {
+                        // Убираем заглушки
+                        placeholderImg.style.opacity = '0';
+                        const playBtn = card.querySelector('.play-button');
+                        if (playBtn) playBtn.style.opacity = '0';
+
+                        setTimeout(() => {
+                            if (placeholderImg) placeholderImg.remove();
+                            if (playBtn) playBtn.remove();
+                            
+                            // Создаем блок официальной разметки TikTok
+                            const embedHTML = `
+                                <blockquote class="tiktok-embed" 
+                                    cite="https://www.tiktok.com/@tiktok/video/${videoId}" 
+                                    data-video-id="${videoId}"
+                                    style="max-width: 100%; min-width: 325px;"
+                                >
+                                    <section></section>
+                                </blockquote>`;
+                            
+                            container.innerHTML = embedHTML;
+                            card.appendChild(container);
+                            
+                            // Принудительно запускаем рендеринг плеера
+                            if (window.tiktokCreateWidgets) {
+                                window.tiktokCreateWidgets();
+                            }
+                            
+                            loader.classList.add('fade-out');
+                        }, 300); // Ждем анимацию исчезновения затемнения
+
+                    } catch (error) {
+                        console.error("Ошибка:", error);
+                        loader.textContent = 'Ошибка\nПопробуйте позже';
+                        loader.style.color = '#ff6b6b';
+                        isLoading = false;
+                    }
+                });
+
+                const button = document.createElement('button');
+                button.className = 'play-button';
+                button.setAttribute('aria-label', 'Воспроизвести видео');
+                button.innerHTML = '<svg viewBox="0 0 24 24"><polygon points="8,5 8,19 19,12"/></polygon></svg>';
+                card.appendChild(button);
+
+                galleryElement.appendChild(card);
+            }
+
+            // Отрисовываем все видео
+            videoIds.forEach(createVideoCard);
+        });
+    </script>
+
+</body>
+</html>
